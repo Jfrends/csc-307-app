@@ -1,9 +1,11 @@
 // backend.js
 import express from "express";
+import cors from "cors";
 
 const app = express();
 const port = 8000;
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -98,8 +100,9 @@ const addUser = (user) => {
   
   app.post("/users", (req, res) => {
     const userToAdd = req.body;
+    userToAdd["id"] = String(Math.floor(Math.random() * 1000))
     addUser(userToAdd);
-    res.send();
+    res.status(201).json(userToAdd).send();
   });
 
   app.delete("/users/:id", (req, res) => {
@@ -109,6 +112,6 @@ const addUser = (user) => {
         res.status(404).send("Resource not found.");
     } else {
         removeUserByID(id);
-        res.send();
+        res.status(204).send();
     }
   });
