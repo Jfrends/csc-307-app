@@ -11,13 +11,13 @@ function MyApp() {
 
   useEffect(() => {
     fetchUsers()
-      .then((res) => res.json())
-      .then((json) => setCharacters(json["users_list"]))
+      .then((res) => {return res.json()})
+      .then((json) => {setCharacters(json)})
       .catch((error) => { console.log(error); });
   }, [] );
 
   function removeOneCharacter(index) {
-    deleteUser(characters[index]["id"])
+    deleteUser(characters[index]["_id"])
     .then((res) => {
       if (res.status === 204){
         const updated = characters.filter((_, i) => i !== index);

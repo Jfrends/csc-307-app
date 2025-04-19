@@ -1,6 +1,7 @@
 // backend.js
 import express from "express";
 import cors from "cors";
+import userServices from "./user-services.js";
 
 const app = express();
 const port = 8000;
@@ -18,100 +19,75 @@ app.listen(port, () => {
   );
 });
 
-const users = {
-    users_list: [
-      {
-        id: "xyz789",
-        name: "Charlie",
-        job: "Janitor"
-      },
-      {
-        id: "abc123",
-        name: "Mac",
-        job: "Bouncer"
-      },
-      {
-        id: "ppp222",
-        name: "Mac",
-        job: "Professor"
-      },
-      {
-        id: "yat999",
-        name: "Dee",
-        job: "Aspring actress"
-      },
-      {
-        id: "zap555",
-        name: "Dennis",
-        job: "Bartender"
-      }
-    ]
-  };
-
-const findUserByName = (name) => {
-    return users["users_list"].filter(
-      (user) => user["name"] === name
-    );
-  };
-
-const findUserByJobAndName = (job, name) => {
-    return users["users_list"].filter(
-      (user) => (user["job"] === job && user["name"] === name)
-    );
-  };
-
-const findUserById = (id) =>
-    users["users_list"].find((user) => user["id"] === id);
-
-const removeUserByID = (id) =>
-    users["users_list"] = users["users_list"].filter(user => user["id"] !== id);
-
-const addUser = (user) => {
-    users["users_list"].push(user);
-    return user;
-  };
-
   app.get("/users", (req, res) => {
     const name = req.query.name;
     const job = req.query.job;
     if (name != undefined && job != undefined){
-      let result = findUserByJobAndName(job, name);
-      result = { users_list: result };
-      res.send(result);
+      userServices.findUserByJobAndName(job, name).then((result) => {
+        res.send(result)
+        //res.status(200).send({ users_list: result })
+      }).catch((error) => {
+        console.error("Couldn't find user by name and job");
+        res.status(500).send();
+      });
     }
     else if (name != undefined) {
-      let result = findUserByName(name);
-      result = { users_list: result };
-      res.send(result);
+      userServices.findUserByName(name).then((result) => {
+      res.status(200).send({ users_list: result });
+      }).catch((error) => {
+        console.error("Couldn't find user by name");
+        res.status(500).send();
+      });
+    }
+    else if (job != undefined) {
+      userServices.findUserByJob(job).then((result) => {
+      res.status(200).send({ users_list: result });
+      }).catch((error) => {
+        console.error("Couldn't find user by job");
+        res.status(500).send();
+      });
     } else {
-      res.send(users);
+      userServices.getUsers().then((result) => res.send(result)).catch((error) => {
+        console.error("Couldn't get users");
+        res.status(500).send();
+      });
     }
   });
   
   app.get("/users/:id", (req, res) => {
     const id = req.params["id"]; //or req.params.id
-    let result = findUserById(id);
+    userServices.findUserById(id).then((result) => {
     if (result === undefined) {
       res.status(404).send("Resource not found.");
     } else {
       res.send(result);
     }
+  }).catch((error) => {
+    console.error("Couldn't get users by id");
+    res.status(500).send();
+  });
   });
   
   app.post("/users", (req, res) => {
     const userToAdd = req.body;
-    userToAdd["id"] = String(Math.floor(Math.random() * 1000))
-    addUser(userToAdd);
-    res.status(201).json(userToAdd).send();
+    userServices.addUser(userToAdd).then((result) => res.status(201).json(result).send())
+    .catch((error) => {
+    console.error("Couldn't add user")
+    res.status(500).send()
+  });
   });
 
   app.delete("/users/:id", (req, res) => {
     const id = req.params["id"]; //or req.params.id
-    let result = findUserById(id);
+    userServices.findUserById(id).then((result) => {
     if (result === undefined) {
         res.status(404).send("Resource not found.");
     } else {
-        removeUserByID(id);
-        res.status(204).send();
+        userServices.removeUserByID(id).then(() => res.status(204).send()).catch((error) => {
+          console.error("Couldn't add user")
+          res.status(500).send()
+        });
+        
     }
+    }).catch(console.error("Couldn't remove user"))
   });
